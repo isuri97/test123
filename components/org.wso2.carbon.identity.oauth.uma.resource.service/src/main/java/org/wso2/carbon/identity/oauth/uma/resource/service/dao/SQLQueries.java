@@ -31,7 +31,7 @@ public class SQLQueries {
                     "VALUES ((SELECT ID FROM IDN_RESOURCE WHERE ID = ?),?,?);";
 
     public static final String STORE_SCOPES =
-            "INSERT INTO IDN_RESOURCE_SCOPE(RESOURCE_IDENTITY,SCOPE_NAME) VALUES ((SELECT ID FROM IDN_RESOURCE WHERE " +
+                "INSERT INTO IDN_RESOURCE_SCOPE(RESOURCE_IDENTITY,SCOPE_NAME) VALUES ((SELECT ID FROM IDN_RESOURCE WHERE " +
                     "ID = ?),?)";
 
     public static final String RETRIEVE_RESOURCES_BY_ID =

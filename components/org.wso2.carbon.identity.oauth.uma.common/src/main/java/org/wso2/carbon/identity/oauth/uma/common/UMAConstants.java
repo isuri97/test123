@@ -46,6 +46,10 @@ public class UMAConstants {
         ERROR_INTERNAL_SERVER_ERROR_FAILED_TO_PERSIST_PT("60007", "Server error occurred while persisting PT."),
         ERROR_INTERNAL_SERVER_ERROR_FAILED_TO_PERSIST_REQUESTED_PERMISSIONS("60008", "Server error occurred while " +
                 "persisting requested permissions."),
+        ERROR_BAD_REQUEST_INVALID_RESOURCE_ID_IN_PERMISSION_TICKET ("6009", "Permission request failed with invalid " +
+                "resource ID's present in the database."),
+        ERROR_BAD_REQUEST_INVALID_RESOURCE_SCOPES_IN_PERMISSION_TICKET("6010", "Permission request failed with invalid"
+                + " resource scopes present in the database."),
         ERROR_UNEXPECTED("60009", "Unexpected error.");
 
         private final String code;

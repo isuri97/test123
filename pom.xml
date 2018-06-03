@@ -45,6 +45,8 @@
         <module>components/org.wso2.carbon.identity.oauth.uma.resource.service</module>
         <module>components/org.wso2.carbon.identity.oauth.uma.common</module>
         <module>features/org.wso2.carbon.identity.oauth.uma.server.feature</module>
+        <module>components/org.wso2.carbon.identity.oauth.uma.xacml.service</module>
+        <module>components/org.wso2.carbon.identity.uma.grant</module>
     </modules>
 
     <repositories>
@@ -293,13 +295,34 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.application.common</artifactId>
-                <version>${carbon.identity.framework.version}</version>
+                <version>${org.wso2.carbon.identity.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.entitlement</artifactId>
+                <version>${org.wso2.carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
+                <version>${org.wso2.carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.entitlement.common</artifactId>
+                <version>${org.wso2.carbon.identity.framework.version}</version>
             </dependency>
 
             <!-- Carbon Kernel dependencies -->
             <dependency>
                 <groupId>org.wso2.carbon</groupId>
                 <artifactId>org.wso2.carbon.utils</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>org.wso2.carbon.user.core</artifactId>
                 <version>${carbon.kernel.version}</version>
             </dependency>
             <dependency>
@@ -328,6 +351,11 @@
                 <groupId>org.apache.felix</groupId>
                 <artifactId>org.osgi.core</artifactId>
                 <version>${osgi.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.oltu.oauth2</groupId>
+                <artifactId>org.apache.oltu.oauth2.client</artifactId>
+                <version>${apache.oltu.version}</version>
             </dependency>
 
             <dependency>
@@ -430,10 +458,12 @@
         <cxf-rt.version>3.1.4</cxf-rt.version>
         <maven.checkstyle.plugin>2.17</maven.checkstyle.plugin>
         <osgi.core.version>1.4.0</osgi.core.version>
+        <apache.oltu.version>1.0.0</apache.oltu.version>
+
 
         <org.wso2.carbon.identity.auth.service.version>1.1.11
         </org.wso2.carbon.identity.auth.service.version>
-
+        <org.wso2.carbon.identity.framework.version>5.8.60</org.wso2.carbon.identity.framework.version>
         <!--<org.wso2.carbon.identity.oauth.version>5.5.180</org.wso2.carbon.identity.oauth.version>-->
         <org.wso2.carbon.identity.oauth.version>6.0.0</org.wso2.carbon.identity.oauth.version>
         <org.wso2.carbon.identity.oauth.import.version.range>[6.0.0, 7.0.0)</org.wso2.carbon.identity.oauth.import.version.range>

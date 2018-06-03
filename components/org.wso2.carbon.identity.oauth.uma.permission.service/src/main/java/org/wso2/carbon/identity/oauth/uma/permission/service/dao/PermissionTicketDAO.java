@@ -31,6 +31,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -61,7 +62,23 @@ public class PermissionTicketDAO {
             " IDN_RESOURCE_SCOPE WHERE SCOPE_NAME = :" + UMAConstants.SQLPlaceholders.RESOURCE_SCOPE + "; AND " +
             "RESOURCE_IDENTITY = (SELECT ID FROM IDN_RESOURCE WHERE RESOURCE_ID = :" +
             UMAConstants.SQLPlaceholders.RESOURCE_ID + ";)";
+    private static final String VALIDATE_PERMISSION_TICKET = "SELECT PT FROM IDN_PERMISSION_TICKET WHERE PT = ? ;";
+    public static final String RETRIEVE_RESOURCE_ID_STORE_IN_PT = "select RESOURCE_ID from IDN_RESOURCE inner join " +
+            "IDN_PT_RESOURCE on IDN_RESOURCE.ID = IDN_PT_RESOURCE.PT_RESOURCE_ID inner join IDN_PERMISSION_TICKET " +
+            "on IDN_PT_RESOURCE.PT_ID = IDN_PERMISSION_TICKET.ID where IDN_PERMISSION_TICKET.PT = ?;";
 
+    public static final String RETRIEVE_RESOURCE_SCOPES_STORE_IN_PT = "select  SCOPE_NAME\n" +
+            "from IDN_RESOURCE_SCOPE\n" +
+            "inner join IDN_PT_RESOURCE_SCOPE\n" +
+            "on IDN_RESOURCE_SCOPE.ID = IDN_PT_RESOURCE_SCOPE.PT_SCOPE_ID\n" +
+            "inner join IDN_PT_RESOURCE\n" +
+            "on IDN_PT_RESOURCE_SCOPE.PT_RESOURCE_ID = IDN_PT_RESOURCE.ID\n" +
+            "inner join IDN_PERMISSION_TICKET\n" +
+            "on IDN_PT_RESOURCE.PT_ID = IDN_PERMISSION_TICKET.ID\n" +
+            "where IDN_PERMISSION_TICKET.PT = ?;";
+
+    public static final String ResourceID = "select RESOURCE_ID from IDN_RESOURCE inner join IDN_RESOURCE_SCOPE" +
+            "on IDN_RESOURCE.ID = IDN_RESOURCE_SCOPE.RESOURCE_IDENTITY;";
     /**
      * Issue a permission ticket. Permission ticket represents the resources requested by the resource server on
      * client's behalf
@@ -69,7 +86,7 @@ public class PermissionTicketDAO {
      * @param resourceList          A list with the resource ids and the corresponding scopes.
      * @param permissionTicketModel Model class for permission ticket values.
      * @throws UMAServerException Exception thrown when there is a database issue.
-     * @throws UMAClientException   Exception thrown when there is an invalid resource ID/scope.
+     * @throws UMAClientException Exception thrown when there is an invalid resource ID/scope.
      */
     public static void persistPTandRequestedPermissions(List<Resource> resourceList,
                                                         PermissionTicketModel permissionTicketModel,
@@ -200,6 +217,107 @@ public class PermissionTicketDAO {
                         .ERROR_INTERNAL_SERVER_ERROR_FAILED_TO_PERSIST_REQUESTED_PERMISSIONS, e);
             }
         }
+    }
+
+    /**
+     * Validating permission Ticket and obtain resource id's and resource scopes which client requested.
+     *
+     * @param permissionTicket
+     * @return resource
+     * @throws UMAClientException
+     * @throws UMAServerException
+     */
+    public List<Resource> validatePermissionTicket(String permissionTicket) throws UMAClientException,
+            UMAServerException {
+
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection()) {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(VALIDATE_PERMISSION_TICKET)) {
+                preparedStatement.setString(1, permissionTicket);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (!resultSet.next()) {
+                        throw new UMAClientException(UMAConstants.ErrorMessages
+                                .ERROR_BAD_REQUEST_INVALID_RESOURCE_ID);
+                    } else {
+                        /*retrieveResourceIdInPTicket(connection, permissionTicket);*/
+                        List<Resource> list = retrieveResourceIdInPT(permissionTicket);
+                        retrieveResourceScopesInPT(permissionTicket, list);
+                        /*resource = retrieveResourceScopesInPT(permissionTicket,
+                                retrieveResourceIdInPT(permissionTicket));*/
+                        return list;
+
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new UMAServerException(UMAConstants.ErrorMessages
+                    .ERROR_INTERNAL_SERVER_ERROR_FAILED_TO_PERSIST_REQUESTED_PERMISSIONS, e);
+        }
+    }
+
+    private static List<Resource> retrieveResourceIdInPT(String permissionTicket) throws UMAClientException,
+            UMAServerException {
+
+        Resource resource;
+        List<Resource> resources = new ArrayList<Resource>();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(RETRIEVE_RESOURCE_ID_STORE_IN_PT);
+            preparedStatement.setString(1, permissionTicket);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (!resultSet.next()) {
+                throw new UMAClientException(UMAConstants.ErrorMessages.
+                        ERROR_BAD_REQUEST_INVALID_RESOURCE_ID_IN_PERMISSION_TICKET, "Permission request failed with"
+                        + "invalid resource id's consist in permission ticket. ");
+            } else {
+
+                do {
+                    resource = new Resource();
+                    if (resultSet.getString(1) != null) {
+                        resource.setResourceId(resultSet.getString(1));
+                        resources.add(resource);
+                    }
+
+                } while (resultSet.next());
+
+            }
+        } catch (SQLException e) {
+            throw new UMAServerException(UMAConstants.ErrorMessages
+                    .ERROR_INTERNAL_SERVER_ERROR_FAILED_TO_PERSIST_REQUESTED_PERMISSIONS, e);
+        }
+        return resources;
+    }
+
+    private static List<Resource> retrieveResourceScopesInPT(String permissionTicket, List<Resource> resource)
+            throws UMAClientException, UMAServerException {
+
+        //Resource resource1;
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(RETRIEVE_RESOURCE_SCOPES_STORE_IN_PT);
+            preparedStatement.setString(1, permissionTicket);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (!resultSet.next()) {
+                throw new UMAClientException(UMAConstants.ErrorMessages.
+                        ERROR_BAD_REQUEST_INVALID_RESOURCE_SCOPES_IN_PERMISSION_TICKET,
+                        "Permission request failed with"
+                                + "invalid resource scopes consist in permission ticket. ");
+            } else {
+                do {
+                    for (Resource rr : resource) {
+                        if (resultSet.getString(1) == rr.getResourceId()) {
+                            if (!rr.getResourceScopes().contains(resultSet.getString(1))) {
+                                rr.getResourceScopes().add(resultSet.getString(1));
+                            }
+                        }
+
+                    }
+                }
+                while (resultSet.next());
+
+            }
+        } catch (SQLException e) {
+            throw new UMAServerException(UMAConstants.ErrorMessages
+                    .ERROR_INTERNAL_SERVER_ERROR_FAILED_TO_PERSIST_REQUESTED_PERMISSIONS, e);
+        }
+        return resource;
     }
 
 }
